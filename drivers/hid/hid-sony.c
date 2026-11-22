@@ -57,6 +57,13 @@
 #define FUTUREMAX_DANCE_MAT       BIT(13)
 #define SHANWAN_GAMEPAD           BIT(14)
 
+/*
+ * ShanWan clones: 1 = send output reports on the interrupt OUT endpoint
+ * (hid_hw_output_report), 0 = old behaviour (control SET_REPORT).
+ * Set to 0 if the controller stops responding at all.
+ */
+#define SHANWAN_USE_INTR_EP 1
+
 #define SIXAXIS_CONTROLLER (SIXAXIS_CONTROLLER_USB | SIXAXIS_CONTROLLER_BT)
 #define MOTION_CONTROLLER (MOTION_CONTROLLER_USB | MOTION_CONTROLLER_BT)
 #define NAVIGATION_CONTROLLER (NAVIGATION_CONTROLLER_USB |\
@@ -2047,6 +2054,23 @@ static void sixaxis_send_output_report(struct sony_sc *sc)
 		}
 	}
 
+	if (sc->quirks & SHANWAN_GAMEPAD) {
+		int ret;
+
+		hid_info(sc->hdev, "shanwan out: %*ph\n", 8, report);
+#if SHANWAN_USE_INTR_EP
+		ret = hid_hw_output_report(sc->hdev, (u8 *)report,
+				sizeof(struct sixaxis_output_report));
+#else
+		ret = hid_hw_raw_request(sc->hdev, report->report_id,
+				(u8 *)report,
+				sizeof(struct sixaxis_output_report),
+				HID_OUTPUT_REPORT, HID_REQ_SET_REPORT);
+#endif
+		hid_info(sc->hdev, "shanwan send ret=%d\n", ret);
+		return;
+	}
+
 	hid_hw_raw_request(sc->hdev, report->report_id, (u8 *)report,
 			sizeof(struct sixaxis_output_report),
 			HID_OUTPUT_REPORT, HID_REQ_SET_REPORT);
@@ -2610,8 +2634,14 @@ static int sony_input_configured(struct hid_device *hdev,
 		 * PS button is pressed. See comment for Navigation controller
 		 * above for more details.
 		 */
-		hdev->quirks |= HID_QUIRK_NO_OUTPUT_REPORTS_ON_INTR_EP;
-		hdev->quirks |= HID_QUIRK_SKIP_OUTPUT_REPORT_ID;
+#if SHANWAN_USE_INTR_EP
+		if (!(sc->quirks & SHANWAN_GAMEPAD)) {
+#endif
+			hdev->quirks |= HID_QUIRK_NO_OUTPUT_REPORTS_ON_INTR_EP;
+			hdev->quirks |= HID_QUIRK_SKIP_OUTPUT_REPORT_ID;
+#if SHANWAN_USE_INTR_EP
+		}
+#endif
 		sc->defer_initialization = 1;
 
 		ret = sixaxis_set_operational_usb(hdev);
