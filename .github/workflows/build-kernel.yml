@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      TZ: America/Sao_Paulo
+      TZ: Asia/Jakarta
       KBUILD_BUILD_USER: nobody
       KBUILD_BUILD_HOST: android-build
 
@@ -21,8 +21,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config --global user.name "Richard Raya"
-          git config --global user.email "rdxzv.dev@gmail.com"
+          git config --global user.name "cykside"
+          git config --global user.email "cunyukside@gmail.com"
 
       - name: Setup commit-msg hook
         run: |
@@ -32,20 +32,12 @@ jobs:
             -o ~/.git/hooks/commit-msg
           chmod +x ~/.git/hooks/commit-msg
 
-      - name: Setup GitHub auth (HTTPS, tanpa SSH)
-        env:
-          PREBUILT_TOKEN: ${{ secrets.PREBUILT_TOKEN }}
-        run: |
-          git config --global url."https://x-access-token:${PREBUILT_TOKEN}@github.com/".insteadOf "git@github.com:"
-          git config --global --add url."https://x-access-token:${PREBUILT_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-
       - name: Build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           bash build.sh --lto
           bash build.sh --lto --su
-
-      - name: Export prebuilts
-        run: bash prebuilt.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@main
