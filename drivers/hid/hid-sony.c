@@ -3119,6 +3119,16 @@ static int sony_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	if (sc->quirks & (SIXAXIS_CONTROLLER | DUALSHOCK4_CONTROLLER))
 		hdev->version |= 0x8000;
 
+	/*
+	 * SHANWAN clones report bcdDevice 0x0110, while genuine DS3 pads
+	 * report 0x0111 over USB. Android selects its key layout by VID, PID
+	 * and version, so report the genuine DS3 USB version (0x8111, which
+	 * includes the 0x8000 flag set above) to get the stock layout that
+	 * matches the gamepad-spec button mapping.
+	 */
+	if (sc->quirks & SHANWAN_GAMEPAD)
+		hdev->version = 0x8111;
+
 	ret = hid_hw_start(hdev, connect_mask);
 	if (ret) {
 		hid_err(hdev, "hw start failed\n");
