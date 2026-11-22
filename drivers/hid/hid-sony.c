@@ -55,6 +55,7 @@
 #define NAVIGATION_CONTROLLER_BT  BIT(11)
 #define SINO_LITE_CONTROLLER      BIT(12)
 #define FUTUREMAX_DANCE_MAT       BIT(13)
+#define SHANWAN_GAMEPAD           BIT(14)
 
 #define SIXAXIS_CONTROLLER (SIXAXIS_CONTROLLER_USB | SIXAXIS_CONTROLLER_BT)
 #define MOTION_CONTROLLER (MOTION_CONTROLLER_USB | MOTION_CONTROLLER_BT)
@@ -2011,6 +2012,16 @@ static void sixaxis_send_output_report(struct sony_sc *sc)
 	report->rumble.left_motor_force = sc->left;
 #endif
 
+	/*
+	 * ShanWan clones treat a duration of 0xff ("forever") as "motor
+	 * running" even when the force is 0, so they vibrate continuously.
+	 * Only set a duration while a motor is actually requested.
+	 */
+	if (sc->quirks & SHANWAN_GAMEPAD) {
+		report->rumble.right_duration = report->rumble.right_motor_on ? 0xff : 0x00;
+		report->rumble.left_duration = report->rumble.left_motor_force ? 0xff : 0x00;
+	}
+
 	report->leds_bitmap |= sc->led_state[0] << 1;
 	report->leds_bitmap |= sc->led_state[1] << 2;
 	report->leds_bitmap |= sc->led_state[2] << 3;
@@ -2745,6 +2756,13 @@ static int sony_probe(struct hid_device *hdev, const struct hid_device_id *id)
 
 	if (!strcmp(hdev->name, "FutureMax Dance Mat"))
 		quirks |= FUTUREMAX_DANCE_MAT;
+
+	/*
+	 * Some ShanWan PS3 clones reuse Sony's USB IDs, so they can only be
+	 * told apart from genuine controllers by their name.
+	 */
+	if (strstr(hdev->name, "SHANWAN"))
+		quirks |= SHANWAN_GAMEPAD;
 
 	sc = devm_kzalloc(&hdev->dev, sizeof(*sc), GFP_KERNEL);
 	if (sc == NULL) {
