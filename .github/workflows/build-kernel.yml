@@ -4,11 +4,14 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      TZ: America/Sao_Paulo
+      TZ: Asia/Jakarta
       KBUILD_BUILD_USER: nobody
       KBUILD_BUILD_HOST: android-build
 
@@ -18,8 +21,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config --global user.name "Richard Raya"
-          git config --global user.email "rdxzv.dev@gmail.com"
+          git config --global user.name "cykside"
+          git config --global user.email "cunyukside@gmail.com"
 
       - name: Setup commit-msg hook
         run: |
@@ -29,20 +32,12 @@ jobs:
             -o ~/.git/hooks/commit-msg
           chmod +x ~/.git/hooks/commit-msg
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PREBUILT_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
       - name: Build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           bash build.sh --lto
           bash build.sh --lto --su
-
-      - name: Export prebuilts
-        run: bash prebuilt.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@main
@@ -50,16 +45,15 @@ jobs:
           name: kernel-zips
           path: "*.zip"
 
-      - name: Send to Telegram
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          TAG="$(date '+%Y%m%d')-${GITHUB_RUN_NUMBER}"
           DATE=$(date '+%H:%M %d/%m/%Y')
-          COMMIT="https://github.com/${{ github.repository }}/commit/$(git rev-parse HEAD)"
-          STANDARD=$(ls FSociety-surya-*.zip)
-          KSU=$(ls FSociety-KSU-*.zip)
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
-            -F chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -F document=@"${STANDARD}" \
-            -F caption="${DATE}"$'\n\n'"${COMMIT}"
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
-            -F chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -F document=@"${KSU}"
+          COMMIT="https://github.com/${GITHUB_REPOSITORY}/commit/$(git rev-parse HEAD)"
+          gh release create "$TAG" *.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes "${DATE}"$'\n\n'"${COMMIT}"
