@@ -36,3 +36,32 @@ jobs:
         env:
           PREBUILT_TOKEN: ${{ secrets.PREBUILT_TOKEN }}
         run: |
+          git config --global url."https://x-access-token:${PREBUILT_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global --add url."https://x-access-token:${PREBUILT_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+
+      - name: Build
+        run: |
+          bash build.sh --lto
+          bash build.sh --lto --su
+
+      - name: Export prebuilts
+        run: bash prebuilt.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@main
+        with:
+          name: kernel-zips
+          path: "*.zip"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="$(date '+%Y%m%d')-${GITHUB_RUN_NUMBER}"
+          DATE=$(date '+%H:%M %d/%m/%Y')
+          COMMIT="https://github.com/${GITHUB_REPOSITORY}/commit/$(git rev-parse HEAD)"
+          gh release create "$TAG" *.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes "${DATE}"$'\n\n'"${COMMIT}"
