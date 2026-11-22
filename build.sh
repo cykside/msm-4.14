@@ -15,7 +15,7 @@ GCC64_DIR="$WD/tc/gcc-arm64"
 GCC32_DIR="$WD/tc/gcc-arm"
 GCC_RELEASES_API="https://api.github.com/repos/mvaisakh/gcc-build/releases/latest"
 GCC_DOWNLOAD_URL="https://github.com/mvaisakh/gcc-build/releases/download"
-GCC_TAG="$(curl -fsSL "$GCC_RELEASES_API" 2>/dev/null | grep -m1 '"tag_name"' | cut -d'"' -f4 || true)"
+GCC_TAG="$(curl -fsSL ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} "$GCC_RELEASES_API" 2>/dev/null | grep -m1 '"tag_name"' | cut -d'"' -f4 || true)"
 
 AK3_DIR="$WD/AnyKernel3"
 AK3_URL="https://github.com/rd-stuffs/AnyKernel3"
