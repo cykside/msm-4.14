@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Surya (POCO X3 NFC / J20C, sm6150/sdmmagpie) - initial 6.1 bring-up stub.
+ *
+ * Ported/audited from msm-4.14 tree:
+ *   - arch/arm64/boot/dts/qcom/sdmmagpie-idp-overlay-miui.dts
+ *   - arch/arm64/boot/dts/qcom/haptic.dtsi
+ *   - arch/arm64/boot/dts/qcom/touchscreen.dtsi
+ *
+ * STATUS: STUB - not bootable. Needs memory map, display, touch, haptics,
+ * audio, camera, modem, battery auth, and MIUI userspace compatibility work.
+ */
+/dts-v1/;
+
+#include <dt-bindings/input/linux-event-codes.h>
+#include "sm6150.dtsi"
+
+/ {
+	model = "Xiaomi POCO X3 NFC";
+	compatible = "xiaomi,surya", "qcom,sm6150";
+	/* Values from 4.14 sdmmagpie-idp-overlay-miui.dts */
+	qcom,msm-id = <365 0x0>;
+	qcom,board-id = <34 0>;
+};
+
+/*
+ * TODO(surya): Verify memory layout on 6.1/sm6150 base.
+ * 4.14 used sdmmagpie-idp.dtsi memory regions; do not copy sm6150.dtsi
+ * SA6155 defaults blindly. Validate against actual surya firmware/ABL.
+ */
+
+/* TODO(surya): Add reserved memory / ramoops layout once verified. */
+
+/* Secure-world GPIOs; keep reserved ranges as on other sm6150 devices. */
+&tlmm {
+	gpio-reserved-ranges = <0 4>;
+};
+
+/*
+ * TODO(surya): ADSP/PIL - confirm firmware paths and late-boot policy.
+ * &adsp_pas { status = "okay"; };
+ */
+
+/*
+ * TODO(surya): Display - 4.14 used NT36672C Huaxing/Tianma FHD video panels
+ * (dsi_nt36672c_huaxing_fhd_video_display, dsi_nt36672c_tianma_fhd_video_display).
+ * Port panel nodes to 6.1 DRM/MSM DSI bindings.
+ */
+
+/*
+ * TODO(surya): Touchscreen - Novatek NT36xxx SPI (novatek,NVT-ts-spi).
+ * 4.14: qupv3_se0_spi, reset gpio8, irq gpio9, spi-max-frequency 19200000.
+ * Driver: drivers/input/touchscreen/nt36xxx_spi/ (needs 6.1 API port).
+ */
+
+/*
+ * TODO(surya): Haptics - AW8624/DRV2624 on qupv3_se1_i2c @0x5A.
+ * 4.14: awinic,aw8624_haptic / ti,drv2624, reset gpio63, irq gpio26.
+ * Drivers: drivers/misc/aw8624_haptic/, drivers/misc/drv2624_haptic/.
+ */
+
+/*
+ * TODO(surya): Battery auth - xiaomi,onewire_gpio (gpio6) + maxim,ds28e16.
+ * Drivers: drivers/power/supply/maxim/onewire_gpio.c, ds28e16.c.
+ */
+
+/*
+ * TODO(surya): Audio - port violet/sm6150 audio overlay patterns to surya
+ * speaker/codec routing.
+ */
+
+/*
+ * TODO(surya): Camera, NFC, sensors, IR SPI, charger/fuel gauge, USB.
+ */
