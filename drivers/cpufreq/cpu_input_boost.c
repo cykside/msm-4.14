@@ -188,8 +188,7 @@ static int cpu_boost_thread(void *data)
 
 		screen_off = test_bit(SCREEN_OFF, &curr_state);
 		if (screen_off != test_bit(SCREEN_OFF, &old_state))
-			update_cluster_gov(cpu_lp_mask,
-					   screen_off ? "schedutil" : "performance");
+			update_cluster_gov(cpu_lp_mask, "schedutil");
 
 		old_state = curr_state;
 		update_online_cpu_policy();
